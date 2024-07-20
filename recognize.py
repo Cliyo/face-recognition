@@ -27,7 +27,7 @@ def who(image,known_face_encodings,known_face_names):
     face_encoding = face_recognition.face_encodings(image, face_location)
 
     for (top, right, bottom, left), face_encoding in zip(face_location, face_encoding):
-        matches = face_recognition.compare_faces(known_face_encodings, face_encoding)
+        matches = face_recognition.compare_faces(known_face_encodings, face_encoding, tolerance=0.49)
 
         result = False
         
