@@ -1,5 +1,8 @@
 import detect
 import recognize
+import asyncio
+import queue
+import threading
 
 # TODO: 
 # Real-time face detection and recognition
@@ -7,25 +10,35 @@ import recognize
 # encrypt face data
 # put hash/byte comparison or any other form to ensure the face is indeed registered for that user and in database
 
-unknown_image = detect.read_image("./pictures/user2_1.jpeg")
 
-face_encodings, names = recognize.encode_faces()
+async def realtime(frame_queue, face_encodings, names):
+    while True:
+        frame = await asyncio.get_event_loop().run_in_executor(None, frame_queue.get)
+        
+        results = []
+        try:
+            results = list(recognize.who(frame,face_encodings,names))
+        except:
+            pass
+        
+        print(results)
+        
+        await asyncio.sleep(2)
 
-results = list(recognize.who(unknown_image,face_encodings,names))
+async def webcam(*args):
+    frame_queue = queue.Queue()
 
-print(results)
+    capture_thread = threading.Thread(target=detect.capture_webcam, args=(frame_queue,))
+    capture_thread.start()
 
-# cv2.rectangle(image, (left, top), (right, bottom), (0, 0, 255), 2)
+    try:
+        await realtime(frame_queue, *args)
+    except asyncio.CancelledError:
+        capture_thread.join()
 
+if __name__ == "__main__":
+    face_encodings, names = recognize.encode_faces()
+    
+    asyncio.run(webcam(face_encodings,names))
+    
 # cv2.putText(image, name, (left, top - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 0, 255), 2)
-
-# scale_percent = 25
-# width = int(unknown_image.shape[1] * scale_percent / 100)
-# height = int(unknown_image.shape[0] * scale_percent / 100)
-# new_dimensions = (width, height)
-
-# unknown_image = cv2.resize(unknown_image, new_dimensions, interpolation=cv2.INTER_AREA)
-
-# cv2.imshow('Result', unknown_image)
-# cv2.waitKey(0)
-# cv2.destroyAllWindows()
