@@ -1,5 +1,6 @@
 import face_recognition
 import os
+import asyncio
 
 def encode_faces():
     known_faces = os.listdir("./known_users")
@@ -40,3 +41,16 @@ def who(image,known_face_encodings,known_face_names):
             
         return result, name
 
+async def realtime_recognition(frame_queue, face_encodings, names):
+    while True:
+        frame = await asyncio.get_event_loop().run_in_executor(None, frame_queue.get)
+        
+        results = []
+        try:
+            results = list(who(frame,face_encodings,names))
+        except Exception as e:
+            print(e)
+            
+        print(results)
+        
+        await asyncio.sleep(2)
