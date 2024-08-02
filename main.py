@@ -5,7 +5,6 @@ import queue
 import threading
 
 # TODO: 
-# Real-time face detection and recognition
 # Optimize face recognition timings for faster processing when having too much users
 # encrypt face data
 # put hash/byte comparison or any other form to ensure the face is indeed registered for that user and in database
@@ -18,9 +17,9 @@ async def realtime(frame_queue, face_encodings, names):
         results = []
         try:
             results = list(recognize.who(frame,face_encodings,names))
-        except:
-            pass
-        
+        except Exception as e:
+            print(e)
+            
         print(results)
         
         await asyncio.sleep(2)
