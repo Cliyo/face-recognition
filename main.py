@@ -27,7 +27,7 @@ async def realtime(frame_queue, face_encodings, names):
 async def webcam(*args):
     frame_queue = queue.Queue()
 
-    capture_thread = threading.Thread(target=detect.capture_webcam, args=(frame_queue,))
+    capture_thread = threading.Thread(target=detect.capture_webcam, args=(frame_queue,1,))
     capture_thread.start()
 
     try:

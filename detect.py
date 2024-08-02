@@ -24,8 +24,8 @@ def read_image(image_path):
 
     return image_rgb
 
-def capture_webcam(frame_queue):
-    image = cv2.VideoCapture(1)
+def capture_webcam(frame_queue,camera_index=0):
+    image = cv2.VideoCapture(camera_index)
     cv2.namedWindow("test")
 
     last_frame_time = time()
