@@ -79,12 +79,21 @@ class Camera():
             raise ValueError("please, start the camera first")
         
         last_frame_time = time()
+        recognise_frame_time = time()
  
         while True:
+            current_time = time()
+            time_elapsed = current_time - last_frame_time
+            
+            if time_elapsed < self.framerate:
+                continue
+            
             self.ret, self.frame = self.image.read()
             if not self.ret:
                 print("failed to grab frame")
                 break
+            
+            last_frame_time = current_time
             
             frame = cv2.resize(self.frame, (640,480))
             
@@ -105,8 +114,9 @@ class Camera():
                 
                 face_frame_rgb = cv2.cvtColor(face_frame, cv2.COLOR_BGR2RGB)
                 
-                if len(faces) == 1 and time() - last_frame_time > 3:
-                    last_frame_time = time()
+                
+                if len(faces) == 1 and time() - recognise_frame_time > 3:
+                    recognise_frame_time = time()
                     print("Face found")
                     frame_queue.put(face_frame_rgb)
             
