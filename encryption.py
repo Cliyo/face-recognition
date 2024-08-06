@@ -14,20 +14,19 @@ class credentials:
         
         self.randomize = 16
         
-    def generate_token(self) -> str:
-        unencrypted_key1 = self.generate_key()
-        unencrypted_key2 = self.generate_key()
-        unencrypted_key3 = self.generate_key()
+    def generate_token(self, key_number = 3) -> str:
+        keys = []
         
-        kdf1 = self.create_pbk()
-        kdf2 = self.create_pbk()
-        kdf3 = self.create_pbk()
+        for i in range(key_number):
+            unencrypted_key = self.generate_key()
+            
+            kdf = self.create_pbk()
+            
+            key = base64.urlsafe_b64encode(kdf.derive(unencrypted_key))
+            
+            keys.append(key)
         
-        key1 = base64.urlsafe_b64encode(kdf1.derive(unencrypted_key1))
-        key2 = base64.urlsafe_b64encode(kdf2.derive(unencrypted_key2))
-        key3 = base64.urlsafe_b64encode(kdf3.derive(unencrypted_key3))
-        
-        fernet = MultiFernet([key1,key2,key3])
+        fernet = MultiFernet(keys)
         
         return fernet
     
