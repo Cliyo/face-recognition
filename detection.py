@@ -107,7 +107,7 @@ class Camera():
                 cv2.putText(frame_marked, "Low Light", (top_left[0]-150, top_left[1]), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 0, 255), 2)
             
             face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
-            faces = face_cascade.detectMultiScale(face_frame, 1.05, 5)
+            faces = face_cascade.detectMultiScale(face_frame, 1.1, 6, minSize=(30,30))
             
             for (x, y, w, h) in faces:
                 cv2.rectangle(frame_marked, (x, y), (x+w, y+h), (255, 0, 0), 2)
