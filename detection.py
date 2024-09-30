@@ -17,12 +17,6 @@ def read_image(image_path):
     
     image_gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
 
-    # face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
-    # faces = face_cascade.detectMultiScale(image, 1.1, 4)
-
-    # for (x, y, w, h) in faces:
-    #     cv2.rectangle(image, (x, y), (x+w, y+h), (255, 0, 0), 2)
-
     image_rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
 
     return image_rgb
@@ -82,13 +76,16 @@ class Camera():
             
         cv2.destroyAllWindows()
         
-    def detect(self,frame_queue):
+    def detect(self,frame_queue,recognize: bool = False,register: bool = False):
         if not self.image:
             raise ValueError("please, start the camera first")
         
         last_frame_time = time()
         recognise_frame_time = time()
- 
+        
+        if recognize and register:
+            raise KeyError("both recognize and register params cannot be true at the same time")
+            
         while True:
             current_time = time()
             time_elapsed = current_time - last_frame_time
@@ -111,8 +108,14 @@ class Camera():
             
             frame_marked = face_frame.copy()
 
-            if self.is_low_light(face_frame, threshold=70):
+            if not register and self.is_low_light(face_frame, threshold=70):
                 cv2.putText(frame_marked, "Low Light", (top_left[0]-150, top_left[1]), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 0, 255), 2)
+                
+            elif register and self.is_low_light(face_frame, threshold=70):
+                cv2.putText(frame_marked, "Low Light", (top_left[0]-150, top_left[1]), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 0, 255), 2)
+                self.frame_marked = frame_marked.copy()
+                recognise_frame_time = time()
+                continue
             
             cv2.imwrite("teste.jpg", face_frame)
             
@@ -126,14 +129,22 @@ class Camera():
                 
                 face_frame_rgb = cv2.cvtColor(face_frame, cv2.COLOR_BGR2RGB)
                 
-                
-            if len(faces.detections) == 1 and time() - recognise_frame_time > 3:
+            self.frame_marked = frame_marked.copy()
+               
+            if recognize and (len(faces.detections) == 1 and time() - recognise_frame_time > 3):    
                 recognise_frame_time = time()
                 print("Face found")
                 frame_queue.put(face_frame_rgb)
+                
+            elif register and len(faces.detections) < 1:
+                recognise_frame_time = time()
             
-            self.frame_marked = frame_marked.copy()
-
+            elif register and (len(faces.detections) == 1 and time() - recognise_frame_time > 5):
+                print("beginning face registration, please do not move")
+                for i in range(5):
+                    cv2.imwrite(f"client_register{i}.jpg", face_frame)
+                recognise_frame_time = time()
+                    
         self.image.release()
 
     def is_low_light(self,image, threshold=50):
@@ -148,5 +159,8 @@ class Camera():
         cv2.rectangle(frame, top_left, bottom_right, (0, 255, 0), 2)
         return top_left, bottom_right
     
-    def register_face(self):
-        pass
+    def register_face(self, frame_queue):
+        self.detect(frame_queue=frame_queue, register=True)
+        
+    def recognize_face(self, frame_queue):
+        self.detect(frame_queue=frame_queue, recognize=True)
