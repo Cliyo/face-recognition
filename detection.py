@@ -1,6 +1,9 @@
 import cv2
 from time import sleep, time
 import numpy as np
+import mediapipe as mp
+from mediapipe.tasks import python
+from mediapipe.tasks.python import vision
 
 def read_image(image_path):
     image = cv2.imread(image_path)
@@ -30,7 +33,11 @@ class Camera():
         self.ret = None
         self.frame = None
         self.frame_marked = None
-        self.framerate = 1/60
+        self.framerate = 1/8
+        
+        mediapipe_base_options = python.BaseOptions(model_asset_path='blaze_face_short_range.tflite')
+        options = vision.FaceDetectorOptions(base_options=mediapipe_base_options)
+        self.detector = vision.FaceDetector.create_from_options(options)
     
     def capture(self, source, **kwargs):
         if source == "rtsp":
@@ -61,6 +68,7 @@ class Camera():
     def ip_camera(self, rtsp_user, rtsp_password, camera_ip, port, stream_source):
         self.capture("rtsp", rtsp_user=rtsp_user, rtsp_password=rtsp_password, 
                             camera_ip=camera_ip, port=port, stream_source=stream_source)
+
     def show(self):
         if not self.image:
             raise ValueError("please, start the camera first")
@@ -106,25 +114,28 @@ class Camera():
             if self.is_low_light(face_frame, threshold=70):
                 cv2.putText(frame_marked, "Low Light", (top_left[0]-150, top_left[1]), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 0, 255), 2)
             
-            face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
-            faces = face_cascade.detectMultiScale(face_frame, 1.05, 5)
+            cv2.imwrite("teste.jpg", face_frame)
             
-            for (x, y, w, h) in faces:
-                cv2.rectangle(frame_marked, (x, y), (x+w, y+h), (255, 0, 0), 2)
+            image_to_detect = mp.Image.create_from_file("teste.jpg")
+            
+            faces = self.detector.detect(image_to_detect)
+            
+            for face in faces.detections:
+                bounding_box = face.bounding_box
+                cv2.rectangle(frame_marked, (bounding_box.origin_x, bounding_box.origin_y), (bounding_box.origin_x+bounding_box.width, bounding_box.origin_y+bounding_box.height), (255, 0, 0), 2)
                 
                 face_frame_rgb = cv2.cvtColor(face_frame, cv2.COLOR_BGR2RGB)
                 
                 
-                if len(faces) == 1 and time() - recognise_frame_time > 3:
-                    recognise_frame_time = time()
-                    print("Face found")
-                    frame_queue.put(face_frame_rgb)
+            if len(faces.detections) == 1 and time() - recognise_frame_time > 3:
+                recognise_frame_time = time()
+                print("Face found")
+                frame_queue.put(face_frame_rgb)
             
             self.frame_marked = frame_marked.copy()
 
         self.image.release()
 
-    
     def is_low_light(self,image, threshold=50):
         gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
         mean_intensity = np.mean(gray)
@@ -136,3 +147,6 @@ class Camera():
         bottom_right = (int(width * 0.75), int(height * 0.9))
         cv2.rectangle(frame, top_left, bottom_right, (0, 255, 0), 2)
         return top_left, bottom_right
+    
+    def register_face(self):
+        pass
