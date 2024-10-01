@@ -3,6 +3,7 @@ import recognize
 import asyncio
 import queue
 import threading
+import encryption
 
 # TODO: 
 # Optimize face recognition timings for faster processing when having too much users
@@ -12,7 +13,7 @@ import threading
 async def camera(face_encodings, names, show=False, rtsp=False, register: bool = False):
     frame_queue = queue.Queue()
 
-    cam = detection.Camera()
+    cam = detection.Camera(register=True,recognize=False)
 
     if rtsp:
         capture_thread = threading.Thread(target=cam.ip_camera, args=("admin","admin","192.168.0.102","1935","1",)) # change with your rtsp credentials, ip, port and stream source
@@ -24,9 +25,9 @@ async def camera(face_encodings, names, show=False, rtsp=False, register: bool =
     await asyncio.sleep(5)
 
     if not register:
-        detection_thread = threading.Thread(target=cam.detect, args=(frame_queue,True,False))
+        detection_thread = threading.Thread(target=cam.detect, args=(frame_queue,))
     else:
-        detection_thread = threading.Thread(target=cam.detect, args=(frame_queue,False,True))
+        detection_thread = threading.Thread(target=cam.detect, args=(frame_queue,))
     detection_thread.start()
 
     if show:
@@ -50,4 +51,3 @@ if __name__ == "__main__":
     
     asyncio.run(camera(face_encodings,names,True,False,True))
     
-# cv2.putText(image, name, (left, top - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 0, 255), 2)
