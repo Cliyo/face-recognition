@@ -23,6 +23,16 @@ def read_image(image_path):
 
     return image_rgb
 
+def encode_frame(frame):
+    success, encoded_image = cv2.imencode('.jpg', frame)
+
+    if success:
+        byte_image = encoded_image.tobytes()
+        return byte_image
+    else:
+        print("Failed to encode image")
+        return None
+
 class Camera():
     def __init__(self,register=False, recognize=False):
         self.image = None
@@ -87,18 +97,16 @@ class Camera():
             bounding_box = face.bounding_box
             cv2.rectangle(self.frame_marked, (bounding_box.origin_x, bounding_box.origin_y), (bounding_box.origin_x+bounding_box.width, bounding_box.origin_y+bounding_box.height), (255, 0, 0), 2)
         
-        if self.recognize and (len(result.detections) == 1 and time() - self.recognise_frame_time > 3):    
+        if self.recognize == True and (len(result.detections) == 1 and time() - self.recognise_frame_time > 3):    
             self.recognise_frame_time = time()
             print("Face found")
             self.frame_queue.put(self.face_frame_rgb)
             
-        elif self.register and len(result.detections) < 1:
+        elif self.register == True and len(result.detections) < 1:
             self.recognise_frame_time = time()
         
-        elif self.register and (len(result.detections) == 1 and time() - self.recognise_frame_time > 5):
+        elif self.register == True and (len(result.detections) == 1 and time() - self.recognise_frame_time > 5):
             print("beginning face registration, please do not move")
-            
-            cv2.imwrite(f"client_register.jpg", self.face_frame)
             
             self.frame_queue.put(self.face_frame)
             

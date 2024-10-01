@@ -23,9 +23,7 @@ class credentials:
             
             kdf = self.create_pbk()
             
-            key = base64.urlsafe_b64encode(kdf.derive(unencrypted_key))
-            
-            key = Fernet(key)
+            key = base64.urlsafe_b64encode(kdf.derive(unencrypted_key)).decode('utf-8')
             
             keys.append(key)
         
@@ -53,7 +51,9 @@ class encryption:
         pass
     
     def gen_multi_fernet(self,keys: list) -> MultiFernet:
-        fernet = MultiFernet(keys)
+        fernet_keys = [Fernet(key.encode("utf-8")) for key in keys]
+        
+        fernet = MultiFernet(fernet_keys)
         
         return fernet
     
@@ -84,3 +84,9 @@ class encryption:
     
     def compare_hash(self,hash1: str, hash2: str) -> bool:
         return hash1 == hash2
+    
+    # def keys_base64(self,keys: list):
+    #     return [key.decode("utf-8") for key in keys]
+    
+    # def encode_keys(self,keys_base64: list):
+    #     return [key.encode("utf-8") for key in keys_base64]
